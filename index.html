@@ -150,8 +150,9 @@
             background: rgba(10,10,10,0.92);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             box-shadow: 0 1px 0 var(--border);
-            transition: background 0.4s ease, backdrop-filter 0.4s ease, box-shadow 0.4s ease;
+            transition: background 0.4s ease, backdrop-filter 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
         }
+        .nav.nav-hidden { transform: translateY(-100%); }
         .nav-inner {
             max-width: var(--max-width); margin: 0 auto; width: 100%;
             display: flex; align-items: center; justify-content: space-between;
@@ -999,7 +1000,7 @@
                 <div class="video-grid">
                     <div class="video-thumb reveal" data-video-id="zNFmBg1SwUk" data-video-title="Roots Into Romance">
                         <div class="video-thumb-img">
-                            <img src="https://i.ytimg.com/vi/zNFmBg1SwUk/maxresdefault.jpg" alt="Roots Into Romance" loading="lazy">
+                            <img src="https://i.ytimg.com/vi/zNFmBg1SwUk/hqdefault.jpg" alt="Roots Into Romance" loading="lazy">
                         </div>
                         <div class="video-thumb-overlay">
                             <div class="video-thumb-play">
@@ -1010,7 +1011,7 @@
                     </div>
                     <div class="video-thumb reveal" data-video-id="tA9AbAMslzA" data-video-title="Turtles All The Way Down">
                         <div class="video-thumb-img">
-                            <img src="https://i.ytimg.com/vi/tA9AbAMslzA/maxresdefault.jpg" alt="Turtles All The Way Down" loading="lazy">
+                            <img src="https://i.ytimg.com/vi/tA9AbAMslzA/hqdefault.jpg" alt="Turtles All The Way Down" loading="lazy">
                         </div>
                         <div class="video-thumb-overlay">
                             <div class="video-thumb-play">
@@ -1337,7 +1338,28 @@
         // NAV SCROLL STATE
         // ========================================
         const nav = document.getElementById('nav');
-        let lastScrollY = 0;
+        let lastScrollY = window.scrollY;
+        let navScrollLocked = false;
+        const isMobile = () => window.innerWidth <= 900;
+        const SCROLL_DELTA = 8;
+
+        window.addEventListener('scroll', () => {
+            if (navScrollLocked) return;
+            const currentY = window.scrollY;
+            const delta = currentY - lastScrollY;
+            if (isMobile() && currentY > 80) {
+                if (delta > SCROLL_DELTA) {
+                    nav.classList.add('nav-hidden');
+                } else if (delta < -SCROLL_DELTA) {
+                    nav.classList.remove('nav-hidden');
+                }
+            } else {
+                nav.classList.remove('nav-hidden');
+            }
+            if (Math.abs(delta) > SCROLL_DELTA) {
+                lastScrollY = currentY;
+            }
+        }, { passive: true });
 
         // ========================================
         // MOBILE MENU
@@ -1369,8 +1391,20 @@
                 const target = document.querySelector(targetId);
                 if (target) {
                     e.preventDefault();
+                    nav.classList.remove('nav-hidden');
+                    navScrollLocked = true;
                     const top = target.getBoundingClientRect().top + window.pageYOffset - 80;
                     window.scrollTo({ top, behavior: 'smooth' });
+                    let scrollTimer;
+                    const unlockOnIdle = () => {
+                        clearTimeout(scrollTimer);
+                        scrollTimer = setTimeout(() => {
+                            navScrollLocked = false;
+                            lastScrollY = window.scrollY;
+                            window.removeEventListener('scroll', unlockOnIdle);
+                        }, 150);
+                    };
+                    window.addEventListener('scroll', unlockOnIdle, { passive: true });
                 }
             });
         });
